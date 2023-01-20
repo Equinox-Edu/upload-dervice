@@ -7,7 +7,7 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.native -t quarkus/upload-service .
+# docker build -f src/main/docker/Dockerfile -t quarkus/upload-service .
 #
 # Then run the container using:
 #

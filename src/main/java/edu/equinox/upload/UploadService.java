@@ -1,20 +1,40 @@
 package edu.equinox.upload;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.UUID;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import edu.equinox.UploadException;
+import edu.equinox.storage.Response;
+import edu.equinox.storage.StorageService;
+import io.minio.UploadObjectArgs;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
-public class UploadService<T extends FileUpload> implements UploadHandler<T> {
+@ApplicationScoped
+public class UploadService implements UploadHandler<FileUpload> {
+
+    @ConfigProperty(name = "minio.bucket.name")
+    String bucketName;
+
+    @Inject
+    @Named("minio_upload")
+    StorageService<UploadObjectArgs> minioService;
+
     @Override
-    public int save(T file) {
-        if (!isValidType(file)){
+    public Response save(FileUpload file) throws Exception {
+        if (file == null || !isValidType(file)) {
             throw new UploadException();
         }
-
-        return 0;
+        UploadObjectArgs uploadObject = toBucketFile(file);
+        return minioService.uploadObject(uploadObject);
     }
 
     @Override
-    public boolean isValidType(T file) {
+    public boolean isValidType(FileUpload file) {
         String contentType = file.contentType();
         String charSet = file.charSet();
 
@@ -29,5 +49,15 @@ public class UploadService<T extends FileUpload> implements UploadHandler<T> {
     private static boolean isValidContentType(String contentType) {
         //Todo
         return true;
+    }
+
+    private UploadObjectArgs toBucketFile(FileUpload file) throws IOException {
+        return UploadObjectArgs.builder()
+            .object(UUID.randomUUID().toString())
+            .userMetadata(Map.of("name", file.fileName()))
+            .bucket(bucketName)
+            .filename(file.filePath().toAbsolutePath().toString())
+            .contentType(file.contentType())
+            .build();
     }
 }
