@@ -25,7 +25,7 @@ public class MinioLivenessCheck implements HealthCheck {
         try {
             boolean bucketExists = minioService.exists((bucketName));
             if (bucketExists) {
-                return HealthCheckResponse.up("alive");
+                return HealthCheckResponse.up(bucketName +" bucket alive");
             } else {
                 Log.trace("bucket not exists");
                 return HealthCheckResponse.up("not alive");
